@@ -1,4 +1,17 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="surface_dark">#121418</color>
+    <color name="surface_panel">#1E232B</color>
+    <color name="surface_panel_stroke">#343B46</color>
+    <color name="text_primary">#F4F7FB</color>
+    <color name="text_secondary">#B8C0CC</color>
+    <color name="accent_blue">#6EA8FE</color>
+    <color name="accent_blue_pressed">#4F8EEB</color>
+    <color name="danger_red">#D84F5F</color>
+    <color name="danger_red_pressed">#B93F4D</color>
+    <color name="control_highlight">#334F7C</color>
+    <color name="control_disabled">#3B414B</color>
+    <color name="icon_background">#101318</color>
+    <color name="icon_foreground">#EAF1FF</color>
 </resources>

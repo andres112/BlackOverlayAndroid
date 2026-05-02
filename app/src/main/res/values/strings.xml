@@ -1,14 +1,18 @@
 <resources>
     <string name="app_name">Black Overlay</string>
+    <string name="main_title">Black Overlay</string>
+    <string name="main_subtitle">Visual screen blackout for personal sideloaded use.</string>
+    <string name="permission_section_title">Permissions</string>
     <string name="request_overlay_permission">Request overlay permission</string>
     <string name="start_overlay">Start black overlay</string>
     <string name="stop_overlay">Stop overlay</string>
+    <string name="manual_stop_note">Use Stop only for emergency or development testing.</string>
     <string name="notification_title">Black overlay active</string>
     <string name="notification_text">Long press the screen to unlock</string>
     <string name="channel_name">Black overlay service</string>
     <string name="unlock_title">Unlock overlay</string>
     <string name="unlock_subtitle">Authenticate to remove overlay</string>
-    <string name="granted">granted</string>
-    <string name="missing">missing</string>
+    <string name="granted">Granted</string>
+    <string name="missing">Missing</string>
     <string name="permission_status_template">Overlay permission: %1$s\nNotification permission: %2$s</string>
 </resources>

@@ -33,6 +33,7 @@ Cancel, error, and failed authentication paths do not stop the service, so the o
 .
 +-- settings.gradle.kts
 +-- build.gradle.kts
++-- gradle.properties
 +-- README.md
 +-- docs/
 |   +-- SETUP_AND_DEBUGGING.md
@@ -48,10 +49,11 @@ Cancel, error, and failed authentication paths do not stop the service, so the o
         |   +-- UnlockActivity.kt
         +-- res/
             +-- layout/activity_main.xml
+            +-- drawable/
+            +-- mipmap-anydpi-v26/
             +-- values/colors.xml
             +-- values/strings.xml
             +-- values/themes.xml
-            +-- drawable/ic_launcher_background.xml
 ```
 
 ## File Map
@@ -65,18 +67,26 @@ Cancel, error, and failed authentication paths do not stop the service, so the o
 - Root Gradle configuration.
 - Keeps Android and Kotlin plugin versions centralized.
 
+`gradle.properties`
+
+- Enables AndroidX with `android.useAndroidX=true`.
+- Suppresses the AGP 8.7.3 compile SDK 36 compatibility warning with `android.suppressUnsupportedCompileSdk=36`.
+- Sets JVM memory and UTF-8 encoding for Gradle.
+
 `app/build.gradle.kts`
 
 - Android application module configuration.
 - Sets namespace and application id to `com.andres.blackoverlay`.
 - Uses `minSdk 28`, `compileSdk 36`, and `targetSdk 36`.
-- Adds AndroidX Core, AppCompat, Material, and Biometric dependencies.
+- Adds AndroidX Core, AppCompat, and stable AndroidX Biometric dependencies.
 - Uses Java/Kotlin 17 bytecode settings.
 
 `app/src/main/AndroidManifest.xml`
 
 - Declares overlay, foreground service, special-use foreground service, and notification permissions.
 - Registers `MainActivity`, `UnlockActivity`, and `BlackOverlayService`.
+- Disables app backup because the app has no user data that should be backed up.
+- Uses project-owned adaptive launcher icons instead of platform drawable icons.
 - Marks the service with `android:foregroundServiceType="specialUse"`.
 - Adds `android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE` for target SDK 36 foreground service validation.
 
@@ -86,6 +96,7 @@ Cancel, error, and failed authentication paths do not stop the service, so the o
 - Opens Android overlay permission settings.
 - Requests notification permission on Android 13+.
 - Starts and stops `BlackOverlayService`.
+- Disables the start button until overlay permission is granted.
 
 `BlackOverlayService.kt`
 
@@ -94,6 +105,7 @@ Cancel, error, and failed authentication paths do not stop the service, so the o
 - Creates one fullscreen black overlay view via `WindowManager`.
 - Uses `TYPE_APPLICATION_OVERLAY`.
 - Consumes all touches with an `OnTouchListener`.
+- Uses `FLAG_NOT_FOCUSABLE` so the app overlay does not take key/input focus from the system.
 - Detects a long press with `GestureDetector`.
 - Launches `UnlockActivity`.
 - Removes the overlay safely when the service stops.
@@ -122,6 +134,15 @@ Cancel, error, and failed authentication paths do not stop the service, so the o
 
 - App theme used by activities.
 
+`app/src/main/res/drawable/`
+
+- Shape drawables for the native Views UI.
+- Vector drawables for the launcher foreground and foreground-service notification icon.
+
+`app/src/main/res/mipmap-anydpi-v26/`
+
+- Adaptive launcher icon definitions for Android 8.0+.
+
 ## Permissions
 
 `SYSTEM_ALERT_WINDOW`
@@ -141,6 +162,17 @@ Cancel, error, and failed authentication paths do not stop the service, so the o
 
 - Required on Android 13+ for notification runtime permission.
 - Requested gracefully from `MainActivity`.
+
+## Security And Privacy
+
+- The app does not include telemetry, analytics, ads, cloud services, or remote backends.
+- Activities and the foreground service are not exported except `MainActivity`, which is the launcher entry point.
+- App backup is disabled in the manifest.
+- Cleartext network traffic is disabled, and the app does not request internet access.
+- Notification actions use immutable `PendingIntent` flags.
+- The foreground service re-checks overlay permission before adding the window.
+- The overlay uses app-level `TYPE_APPLICATION_OVERLAY`; it does not request Device Owner, AccessibilityService, root, Lock Task Mode, or system-app privileges.
+- Signing keys, local SDK paths, build outputs, IDE metadata, and generated reports are ignored by `.gitignore`.
 
 ## Overlay Design
 
@@ -193,11 +225,29 @@ Preferred build check:
 ./gradlew assembleDebug
 ```
 
+Windows PowerShell:
+
+```powershell
+.\gradlew.bat assembleDebug
+```
+
 Fallback on Windows PowerShell if the wrapper is unavailable and installed Gradle exists:
 
 ```powershell
 gradle assembleDebug
 ```
+
+Android Studio and Gradle may generate local files during sync/build:
+
+- `.gradle/`
+- `.idea/`
+- `build/`
+- `app/build/`
+- `local.properties`
+- `build/reports/problems/problems-report.html`
+- `app/build/outputs/logs/manifest-merger-debug-report.txt`
+
+These are local environment or generated build artifacts. They are ignored by `.gitignore` and should not be committed.
 
 Manual inspection checklist:
 

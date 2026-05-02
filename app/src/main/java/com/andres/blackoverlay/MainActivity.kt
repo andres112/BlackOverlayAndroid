@@ -15,6 +15,8 @@ import androidx.core.content.ContextCompat
 class MainActivity : AppCompatActivity() {
 
     private lateinit var permissionStatus: TextView
+    private lateinit var requestOverlayButton: Button
+    private lateinit var startOverlayButton: Button
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -27,8 +29,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         permissionStatus = findViewById(R.id.textPermissionStatus)
-        findViewById<Button>(R.id.buttonRequestOverlay).setOnClickListener { requestOverlayPermission() }
-        findViewById<Button>(R.id.buttonStartOverlay).setOnClickListener { startOverlay() }
+        requestOverlayButton = findViewById(R.id.buttonRequestOverlay)
+        startOverlayButton = findViewById(R.id.buttonStartOverlay)
+
+        requestOverlayButton.setOnClickListener { requestOverlayPermission() }
+        startOverlayButton.setOnClickListener { startOverlay() }
         findViewById<Button>(R.id.buttonStopOverlay).setOnClickListener { stopOverlay() }
     }
 
@@ -52,6 +57,8 @@ class MainActivity : AppCompatActivity() {
             if (overlayGranted) getString(R.string.granted) else getString(R.string.missing),
             if (notificationGranted) getString(R.string.granted) else getString(R.string.missing)
         )
+        requestOverlayButton.isEnabled = !overlayGranted
+        startOverlayButton.isEnabled = overlayGranted
     }
 
     private fun requestOverlayPermission() {

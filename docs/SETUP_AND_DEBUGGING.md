@@ -91,6 +91,12 @@ From the repository root:
 ./gradlew assembleDebug
 ```
 
+On Windows PowerShell:
+
+```powershell
+.\gradlew.bat assembleDebug
+```
+
 On Windows PowerShell, if the Gradle wrapper is not available and installed Gradle is present:
 
 ```powershell
@@ -112,7 +118,14 @@ Build first, then install:
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-On Windows PowerShell with installed Gradle:
+On Windows PowerShell:
+
+```powershell
+.\gradlew.bat assembleDebug
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+On Windows PowerShell with installed Gradle but no wrapper:
 
 ```powershell
 gradle assembleDebug
@@ -188,6 +201,18 @@ Android Studio cannot find SDK 36:
 - Install the Android SDK Platform for API 36.
 - Sync Gradle again.
 
+Command-line Gradle says `JAVA_HOME is not set`:
+
+- Android Studio can build with its bundled runtime even when the terminal cannot.
+- For terminal builds, install a JDK or point `JAVA_HOME` to Android Studio's bundled JBR/JDK.
+- After changing `JAVA_HOME`, open a new terminal and run `.\gradlew.bat assembleDebug` again.
+
+Gradle generated `build/reports/problems/problems-report.html`:
+
+- This is a local build report.
+- A deprecation warning in this report is not automatically a failed build.
+- Check Android Studio's **Build** output for `BUILD SUCCESSFUL` or the first actual error.
+
 Overlay does not appear:
 
 - Confirm **Appear on top** is granted.
@@ -198,3 +223,23 @@ Unlock prompt closes without removing the overlay:
 
 - Make sure the phone has a PIN, pattern, password, or biometric enrolled.
 - Cancel/error paths intentionally leave the overlay active.
+
+## Repository Hygiene
+
+Do not commit local Android Studio or build output folders. The repository `.gitignore` excludes:
+
+- `.idea/`
+- `.gradle/`
+- `build/`
+- `app/build/`
+- `local.properties`
+- generated APK/AAB files
+- signing keys and keystore property files
+- generated logs and reports
+
+Commit the Gradle wrapper files:
+
+- `gradlew`
+- `gradlew.bat`
+- `gradle/wrapper/gradle-wrapper.jar`
+- `gradle/wrapper/gradle-wrapper.properties`

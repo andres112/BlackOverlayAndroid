@@ -33,6 +33,12 @@ Important limitations:
 ./gradlew assembleDebug
 ```
 
+On Windows PowerShell with the wrapper:
+
+```powershell
+.\gradlew.bat assembleDebug
+```
+
 On Windows PowerShell, if the Gradle wrapper is unavailable and Gradle is installed:
 
 ```powershell
