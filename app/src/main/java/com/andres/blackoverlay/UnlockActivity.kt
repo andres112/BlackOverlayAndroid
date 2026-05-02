@@ -18,6 +18,7 @@ class UnlockActivity : AppCompatActivity() {
         val authenticators = BiometricManager.Authenticators.BIOMETRIC_WEAK or
             BiometricManager.Authenticators.DEVICE_CREDENTIAL
 
+        // DEVICE_CREDENTIAL covers phones without enrolled biometrics but with PIN/pattern/password.
         val canAuth = BiometricManager.from(this).canAuthenticate(authenticators)
         if (canAuth != BiometricManager.BIOMETRIC_SUCCESS) {
             finish()
@@ -27,11 +28,13 @@ class UnlockActivity : AppCompatActivity() {
         val executor = ContextCompat.getMainExecutor(this)
         val prompt = BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                // Only a successful authentication removes the overlay.
                 stopService(Intent(this@UnlockActivity, BlackOverlayService::class.java))
                 finish()
             }
 
             override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                // Cancel/error paths close this activity but intentionally leave the overlay running.
                 finish()
             }
 

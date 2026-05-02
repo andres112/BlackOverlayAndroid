@@ -34,6 +34,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Overlay permission is granted in Settings, so refresh whenever the user returns.
         updatePermissionStatus()
     }
 
@@ -58,6 +59,8 @@ class MainActivity : AppCompatActivity() {
             updatePermissionStatus()
             return
         }
+
+        // SYSTEM_ALERT_WINDOW is not a runtime permission; Android exposes it through settings.
         val intent = Intent(
             Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
             Uri.parse("package:$packageName")
@@ -66,6 +69,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun maybeRequestNotificationPermission() {
+        // Android 13+ requires a runtime notification permission before notifications are visible.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val granted = ContextCompat.checkSelfPermission(
                 this,
@@ -82,6 +86,8 @@ class MainActivity : AppCompatActivity() {
             requestOverlayPermission()
             return
         }
+
+        // The service still starts if the user declines notifications, but Android may hide alerts.
         maybeRequestNotificationPermission()
         ContextCompat.startForegroundService(this, Intent(this, BlackOverlayService::class.java))
     }

@@ -34,17 +34,20 @@ class BlackOverlayService : Service() {
             return START_NOT_STICKY
         }
 
+        // The permission can be revoked while the app is installed, so re-check inside the service.
         if (!Settings.canDrawOverlays(this)) {
             stopSelf()
             return START_NOT_STICKY
         }
 
+        // Foreground service notification must be active before doing long-running overlay work.
         startForeground(NOTIFICATION_ID, createNotification())
         showOverlayIfNeeded()
         return START_STICKY
     }
 
     private fun showOverlayIfNeeded() {
+        // Repeated starts should keep the existing overlay instead of adding duplicate windows.
         if (overlayView != null) return
 
         val detector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
@@ -58,6 +61,7 @@ class BlackOverlayService : Service() {
             isLongClickable = true
             setOnTouchListener { _, event ->
                 detector.onTouchEvent(event)
+                // Consume all touches so normal apps underneath do not receive them.
                 true
             }
         }
@@ -72,6 +76,7 @@ class BlackOverlayService : Service() {
             gravity = Gravity.TOP or Gravity.START
         }
 
+        // TYPE_APPLICATION_OVERLAY is the public app-level overlay window type for Android O+.
         windowManager.addView(overlayView, params)
     }
 
@@ -84,6 +89,7 @@ class BlackOverlayService : Service() {
 
     private fun createChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        // Low importance keeps the required foreground notification visible without sound/vibration.
         val channel = NotificationChannel(
             CHANNEL_ID,
             getString(R.string.channel_name),
@@ -126,6 +132,7 @@ class BlackOverlayService : Service() {
         try {
             windowManager.removeView(view)
         } catch (_: IllegalArgumentException) {
+            // The system may already have detached the view during service teardown.
         }
         overlayView = null
     }
