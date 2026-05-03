@@ -67,6 +67,17 @@
             android:textColor="@color/text_primary" />
 
         <Button
+            android:id="@+id/buttonAddQuickSettingsTile"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/button_secondary"
+            android:stateListAnimator="@null"
+            android:text="@string/add_quick_settings_tile"
+            android:textAllCaps="false"
+            android:textColor="@color/text_primary" />
+
+        <Button
             android:id="@+id/buttonStartOverlay"
             android:layout_width="match_parent"
             android:layout_height="52dp"

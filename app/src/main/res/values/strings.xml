@@ -7,6 +7,7 @@
     <string name="start_overlay">Start black overlay</string>
     <string name="stop_overlay">Stop overlay</string>
     <string name="manual_stop_note">Use Stop only for emergency or development testing.</string>
+    <string name="quick_settings_tile_label">Black Overlay</string>
     <string name="notification_title">Black overlay active</string>
     <string name="notification_text">Long press the screen to unlock</string>
     <string name="channel_name">Black overlay service</string>

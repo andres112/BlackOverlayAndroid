@@ -16,6 +16,7 @@ This is a visual overlay, not a real lock screen. It does not block Home, Recent
 3. A long press on the black screen opens `UnlockActivity`.
 4. `UnlockActivity` shows AndroidX `BiometricPrompt` with biometric or device credential unlock.
 5. Successful authentication stops the service and removes the overlay.
+6. An optional Quick Settings tile can start or stop the overlay from the pull-down top menu.
 
 ## Safety
 

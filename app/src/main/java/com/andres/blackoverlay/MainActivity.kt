@@ -1,13 +1,17 @@
 package com.andres.blackoverlay
 
 import android.Manifest
+import android.app.StatusBarManager
+import android.content.ComponentName
 import android.content.Intent
+import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -33,6 +37,9 @@ class MainActivity : AppCompatActivity() {
         startOverlayButton = findViewById(R.id.buttonStartOverlay)
 
         requestOverlayButton.setOnClickListener { requestOverlayPermission() }
+        findViewById<Button>(R.id.buttonAddQuickSettingsTile).setOnClickListener {
+            requestAddQuickSettingsTile()
+        }
         startOverlayButton.setOnClickListener { startOverlay() }
         findViewById<Button>(R.id.buttonStopOverlay).setOnClickListener { stopOverlay() }
     }
@@ -85,6 +92,26 @@ class MainActivity : AppCompatActivity() {
             if (!granted) {
                 notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
+        }
+    }
+
+    private fun requestAddQuickSettingsTile() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val statusBarManager = getSystemService(StatusBarManager::class.java)
+            statusBarManager.requestAddTileService(
+                ComponentName(this, BlackOverlayTileService::class.java),
+                getString(R.string.quick_settings_tile_label),
+                Icon.createWithResource(this, R.drawable.ic_stat_overlay),
+                mainExecutor
+            ) {
+                // Android owns the result UI; no app state needs to change here.
+            }
+        } else {
+            Toast.makeText(
+                this,
+                R.string.quick_settings_tile_manual_add,
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 

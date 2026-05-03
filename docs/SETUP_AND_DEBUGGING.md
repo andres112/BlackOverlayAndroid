@@ -180,6 +180,18 @@ If you denied it earlier:
 7. Authenticate with biometric, PIN, pattern, or password.
 8. Confirm the overlay disappears.
 
+## Add The Quick Settings Tile
+
+The app includes an optional Quick Settings tile for faster access from the pull-down top menu.
+
+1. Swipe down from the top of the screen twice.
+2. Tap the edit button for Quick Settings tiles.
+3. Find **Black Overlay**.
+4. Drag it into the active Quick Settings area.
+5. Tap the tile to start or stop the overlay.
+
+If overlay permission has not been granted yet, tapping the tile opens the app so you can grant permission first.
+
 Emergency/manual test:
 
 1. Start the overlay.
@@ -218,6 +230,12 @@ Overlay does not appear:
 - Confirm **Appear on top** is granted.
 - Confirm the service notification appears.
 - Try from a normal app screen, not a sensitive Android settings or security screen.
+
+Overlay does not cover the navigation bar:
+
+- The app uses Android's fullscreen overlay and immersive flags, but Android may still reserve gesture and navigation areas for system control.
+- This app does not block Home, Back, Recents, or system gestures.
+- On Samsung, switching between gesture navigation and button navigation can change how much of the bottom system area Android allows third-party overlays to cover.
 
 Unlock prompt closes without removing the overlay:
 

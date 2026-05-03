@@ -7,6 +7,7 @@ The app has three runtime pieces:
 - `MainActivity`: permission/status UI and manual start/stop controls.
 - `BlackOverlayService`: foreground service that owns the overlay window and notification.
 - `UnlockActivity`: authentication screen launched by long pressing the overlay.
+- `BlackOverlayTileService`: optional Quick Settings tile for fast start/stop access.
 
 The overlay lifetime is tied to `BlackOverlayService`. Starting the service creates the foreground notification and adds the overlay view. Stopping the service removes the view in `onDestroy()`.
 
@@ -27,6 +28,12 @@ The overlay lifetime is tied to `BlackOverlayService`. Starting the service crea
 
 Cancel, error, and failed authentication paths do not stop the service, so the overlay remains active.
 
+Quick Settings flow:
+
+1. User adds the **Black Overlay** tile from Android Quick Settings edit mode.
+2. If overlay permission is granted, tapping the tile starts or stops `BlackOverlayService`.
+3. If overlay permission is missing, tapping the tile opens `MainActivity`.
+
 ## Project Structure
 
 ```text
@@ -46,6 +53,7 @@ Cancel, error, and failed authentication paths do not stop the service, so the o
         +-- java/com/andres/blackoverlay/
         |   +-- MainActivity.kt
         |   +-- BlackOverlayService.kt
+        |   +-- BlackOverlayTileService.kt
         |   +-- UnlockActivity.kt
         +-- res/
             +-- layout/activity_main.xml
@@ -89,6 +97,7 @@ Cancel, error, and failed authentication paths do not stop the service, so the o
 - Uses project-owned adaptive launcher icons instead of platform drawable icons.
 - Marks the service with `android:foregroundServiceType="specialUse"`.
 - Adds `android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE` for target SDK 36 foreground service validation.
+- Registers `BlackOverlayTileService` with `android.permission.BIND_QUICK_SETTINGS_TILE`.
 
 `MainActivity.kt`
 
@@ -109,6 +118,14 @@ Cancel, error, and failed authentication paths do not stop the service, so the o
 - Detects a long press with `GestureDetector`.
 - Launches `UnlockActivity`.
 - Removes the overlay safely when the service stops.
+- Stores simple local overlay-active state for Quick Settings tile display.
+
+`BlackOverlayTileService.kt`
+
+- Provides a Quick Settings tile named **Black Overlay**.
+- Starts the foreground service when the tile is inactive.
+- Stops the foreground service when the tile is active.
+- Opens `MainActivity` if overlay permission has not been granted.
 
 `UnlockActivity.kt`
 
@@ -181,11 +198,14 @@ The service creates a plain `View` with an opaque black background. It uses:
 - `WindowManager.LayoutParams.MATCH_PARENT` width and height
 - `WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY`
 - `WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN`
+- `WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS`
+- `WindowManager.LayoutParams.FLAG_FULLSCREEN`
+- `WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE`
 - `PixelFormat.OPAQUE`
 
 The overlay consumes every touch event by returning `true` from its touch listener. This prevents touches from passing through to normal apps underneath the overlay.
 
-The app intentionally does not try to block system navigation. Android reserves Home, Recents, power, and some system surfaces for the operating system.
+The overlay also requests immersive fullscreen system UI flags so Android can lay it out behind the navigation area where allowed. The app intentionally does not try to block system navigation. Android reserves Home, Back, Recents, power, and some system surfaces for the operating system, so Samsung/Android may still keep parts of the bottom navigation area interactive.
 
 ## Foreground Service Behavior
 

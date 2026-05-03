@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.PixelFormat
@@ -43,6 +44,7 @@ class BlackOverlayService : Service() {
         // Foreground service notification must be active before doing long-running overlay work.
         startForeground(NOTIFICATION_ID, createNotification())
         showOverlayIfNeeded()
+        setOverlayActive(true)
         return START_STICKY
     }
 
@@ -71,6 +73,7 @@ class BlackOverlayService : Service() {
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.OPAQUE
         ).apply {
@@ -129,6 +132,7 @@ class BlackOverlayService : Service() {
 
     override fun onDestroy() {
         removeOverlaySafely()
+        setOverlayActive(false)
         super.onDestroy()
     }
 
@@ -144,9 +148,19 @@ class BlackOverlayService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    private fun setOverlayActive(active: Boolean) {
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_OVERLAY_ACTIVE, active)
+            .apply()
+    }
+
     companion object {
+        const val ACTION_STOP = "com.andres.blackoverlay.action.STOP"
+        const val PREFS_NAME = "black_overlay_state"
+        const val KEY_OVERLAY_ACTIVE = "overlay_active"
+
         private const val CHANNEL_ID = "black_overlay_channel"
         private const val NOTIFICATION_ID = 1001
-        private const val ACTION_STOP = "com.andres.blackoverlay.action.STOP"
     }
 }
