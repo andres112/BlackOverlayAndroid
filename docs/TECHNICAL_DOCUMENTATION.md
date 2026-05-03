@@ -30,7 +30,7 @@ Cancel, error, and failed authentication paths do not stop the service, so the o
 
 Quick Settings flow:
 
-1. User adds the **Black Overlay** tile from Android Quick Settings edit mode.
+1. User taps **Add Quick Settings tile** in `MainActivity`, or manually adds the tile from Android Quick Settings edit mode.
 2. If overlay permission is granted, tapping the tile starts or stops `BlackOverlayService`.
 3. If overlay permission is missing, tapping the tile opens `MainActivity`.
 
@@ -103,6 +103,7 @@ Quick Settings flow:
 
 - Displays overlay and notification permission status.
 - Opens Android overlay permission settings.
+- Requests that Android add the app's Quick Settings tile on Android 13+.
 - Requests notification permission on Android 13+.
 - Starts and stops `BlackOverlayService`.
 - Disables the start button until overlay permission is granted.
@@ -199,13 +200,12 @@ The service creates a plain `View` with an opaque black background. It uses:
 - `WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY`
 - `WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN`
 - `WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS`
-- `WindowManager.LayoutParams.FLAG_FULLSCREEN`
 - `WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE`
 - `PixelFormat.OPAQUE`
 
 The overlay consumes every touch event by returning `true` from its touch listener. This prevents touches from passing through to normal apps underneath the overlay.
 
-The overlay also requests immersive fullscreen system UI flags so Android can lay it out behind the navigation area where allowed. The app intentionally does not try to block system navigation. Android reserves Home, Back, Recents, power, and some system surfaces for the operating system, so Samsung/Android may still keep parts of the bottom navigation area interactive.
+The app intentionally does not try to block system navigation. Android reserves Home, Back, Recents, power, and some system surfaces for the operating system, so Samsung/Android may still keep parts of the bottom navigation area interactive.
 
 ## Foreground Service Behavior
 

@@ -184,6 +184,15 @@ If you denied it earlier:
 
 The app includes an optional Quick Settings tile for faster access from the pull-down top menu.
 
+Android 13+:
+
+1. Open **Black Overlay**.
+2. Tap **Add Quick Settings tile**.
+3. Accept Android's prompt to add the tile.
+4. Swipe down from the top of the screen and tap **Black Overlay** to start or stop the overlay.
+
+Manual method:
+
 1. Swipe down from the top of the screen twice.
 2. Tap the edit button for Quick Settings tiles.
 3. Find **Black Overlay**.
@@ -233,7 +242,7 @@ Overlay does not appear:
 
 Overlay does not cover the navigation bar:
 
-- The app uses Android's fullscreen overlay and immersive flags, but Android may still reserve gesture and navigation areas for system control.
+- Android reserves the navigation bar and gesture area for system control.
 - This app does not block Home, Back, Recents, or system gestures.
 - On Samsung, switching between gesture navigation and button navigation can change how much of the bottom system area Android allows third-party overlays to cover.
 
