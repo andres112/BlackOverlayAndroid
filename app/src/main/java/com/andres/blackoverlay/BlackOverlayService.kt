@@ -4,7 +4,6 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.PixelFormat
@@ -22,6 +21,7 @@ import androidx.core.app.NotificationCompat
 class BlackOverlayService : Service() {
 
     private val windowManager by lazy { getSystemService(WINDOW_SERVICE) as WindowManager }
+    private val settingsRepository by lazy { OverlaySettingsRepository(this) }
     private var overlayView: View? = null
     private var unlockTapCount = 0
     private var lastUnlockTapAt = 0L
@@ -41,7 +41,7 @@ class BlackOverlayService : Service() {
         // Foreground service notification must be active before doing long-running overlay work.
         startForeground(NOTIFICATION_ID, createNotification())
         showOverlayIfNeeded()
-        setOverlayActive(true)
+        settingsRepository.setOverlayActive(true)
         return START_STICKY
     }
 
@@ -96,9 +96,7 @@ class BlackOverlayService : Service() {
     }
 
     private fun getRequiredUnlockTapCount(): Int =
-        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .getInt(KEY_UNLOCK_TAP_COUNT, DEFAULT_UNLOCK_TAP_COUNT)
-            .coerceIn(MIN_UNLOCK_TAP_COUNT, MAX_UNLOCK_TAP_COUNT)
+        settingsRepository.getUnlockTapCount()
 
     private fun launchUnlock() {
         val intent = Intent(this, UnlockActivity::class.java).apply {
@@ -131,7 +129,7 @@ class BlackOverlayService : Service() {
 
     override fun onDestroy() {
         removeOverlaySafely()
-        setOverlayActive(false)
+        settingsRepository.setOverlayActive(false)
         super.onDestroy()
     }
 
@@ -147,21 +145,7 @@ class BlackOverlayService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    private fun setOverlayActive(active: Boolean) {
-        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .putBoolean(KEY_OVERLAY_ACTIVE, active)
-            .apply()
-    }
-
     companion object {
-        const val PREFS_NAME = "black_overlay_state"
-        const val KEY_OVERLAY_ACTIVE = "overlay_active"
-        const val KEY_UNLOCK_TAP_COUNT = "unlock_tap_count"
-        const val MIN_UNLOCK_TAP_COUNT = 3
-        const val MAX_UNLOCK_TAP_COUNT = 7
-        const val DEFAULT_UNLOCK_TAP_COUNT = 3
-
         private const val CHANNEL_ID = "black_overlay_channel"
         private const val NOTIFICATION_ID = 1001
         private val UNLOCK_TAP_TIMEOUT_MS = ViewConfiguration.getDoubleTapTimeout().toLong() * 2

@@ -10,11 +10,6 @@
     <string name="manual_stop_note">Use Stop only for emergency or development testing.</string>
     <string name="unlock_tap_count_title">Unlock taps</string>
     <string name="unlock_tap_count_subtitle">Followed taps required before authentication.</string>
-    <string name="unlock_tap_count_3">3</string>
-    <string name="unlock_tap_count_4">4</string>
-    <string name="unlock_tap_count_5">5</string>
-    <string name="unlock_tap_count_6">6</string>
-    <string name="unlock_tap_count_7">7</string>
     <string name="quick_settings_tile_label">Black Overlay</string>
     <string name="quick_settings_tile_manual_add">Swipe down twice, edit Quick Settings, then add the Black Overlay tile.</string>
     <string name="notification_title">Black overlay active</string>

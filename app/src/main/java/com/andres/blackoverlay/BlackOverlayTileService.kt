@@ -1,7 +1,6 @@
 package com.andres.blackoverlay
 
 import android.app.PendingIntent
-import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
@@ -10,6 +9,8 @@ import android.service.quicksettings.TileService
 import androidx.core.content.ContextCompat
 
 class BlackOverlayTileService : TileService() {
+
+    private val settingsRepository by lazy { OverlaySettingsRepository(this) }
 
     override fun onStartListening() {
         super.onStartListening()
@@ -38,8 +39,7 @@ class BlackOverlayTileService : TileService() {
     }
 
     private fun isOverlayActive(): Boolean =
-        getSharedPreferences(BlackOverlayService.PREFS_NAME, Context.MODE_PRIVATE)
-            .getBoolean(BlackOverlayService.KEY_OVERLAY_ACTIVE, false)
+        settingsRepository.isOverlayActive()
 
     private fun updateTile() {
         qsTile?.let { tile ->

@@ -88,40 +88,15 @@
                     android:textSize="14sp" />
             </LinearLayout>
 
-            <RadioGroup
-                android:id="@+id/groupUnlockTapCount"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+            <Spinner
+                android:id="@+id/spinnerUnlockTapCount"
+                android:layout_width="96dp"
+                android:layout_height="48dp"
                 android:layout_marginStart="16dp"
-                android:orientation="horizontal">
-
-                <RadioButton
-                    android:id="@+id/radioUnlockTapCount3"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:buttonTint="@color/accent_blue"
-                    android:gravity="center"
-                    android:text="@string/unlock_tap_count_3"
-                    android:textColor="@color/text_primary" />
-
-                <RadioButton
-                    android:id="@+id/radioUnlockTapCount4"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:buttonTint="@color/accent_blue"
-                    android:gravity="center"
-                    android:text="@string/unlock_tap_count_4"
-                    android:textColor="@color/text_primary" />
-
-                <RadioButton
-                    android:id="@+id/radioUnlockTapCount5"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:buttonTint="@color/accent_blue"
-                    android:gravity="center"
-                    android:text="@string/unlock_tap_count_5"
-                    android:textColor="@color/text_primary" />
-            </RadioGroup>
+                android:background="@drawable/button_secondary"
+                android:dropDownWidth="96dp"
+                android:popupBackground="@color/surface_panel"
+                android:spinnerMode="dropdown" />
         </LinearLayout>
 
         <Button
