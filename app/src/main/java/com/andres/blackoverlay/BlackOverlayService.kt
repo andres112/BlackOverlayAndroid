@@ -3,7 +3,6 @@ package com.andres.blackoverlay
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -11,11 +10,12 @@ import android.graphics.Color
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
+import android.os.SystemClock
 import android.provider.Settings
-import android.view.GestureDetector
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
 
@@ -23,6 +23,8 @@ class BlackOverlayService : Service() {
 
     private val windowManager by lazy { getSystemService(WINDOW_SERVICE) as WindowManager }
     private var overlayView: View? = null
+    private var unlockTapCount = 0
+    private var lastUnlockTapAt = 0L
 
     override fun onCreate() {
         super.onCreate()
@@ -30,11 +32,6 @@ class BlackOverlayService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_STOP) {
-            stopSelf()
-            return START_NOT_STICKY
-        }
-
         // The permission can be revoked while the app is installed, so re-check inside the service.
         if (!Settings.canDrawOverlays(this)) {
             stopSelf()
@@ -52,17 +49,10 @@ class BlackOverlayService : Service() {
         // Repeated starts should keep the existing overlay instead of adding duplicate windows.
         if (overlayView != null) return
 
-        val detector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onLongPress(e: MotionEvent) {
-                launchUnlock()
-            }
-        })
-
         overlayView = View(this).apply {
             setBackgroundColor(Color.BLACK)
-            isLongClickable = true
             setOnTouchListener { _, event ->
-                detector.onTouchEvent(event)
+                handleOverlayTouch(event)
                 // Consume all touches so normal apps underneath do not receive them.
                 true
             }
@@ -88,6 +78,28 @@ class BlackOverlayService : Service() {
         windowManager.addView(overlayView, params)
     }
 
+    private fun handleOverlayTouch(event: MotionEvent) {
+        if (event.action != MotionEvent.ACTION_UP) return
+
+        val now = SystemClock.uptimeMillis()
+        if (now - lastUnlockTapAt > UNLOCK_TAP_TIMEOUT_MS) {
+            unlockTapCount = 0
+        }
+        lastUnlockTapAt = now
+
+        unlockTapCount += 1
+        if (unlockTapCount >= getRequiredUnlockTapCount()) {
+            unlockTapCount = 0
+            lastUnlockTapAt = 0L
+            launchUnlock()
+        }
+    }
+
+    private fun getRequiredUnlockTapCount(): Int =
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getInt(KEY_UNLOCK_TAP_COUNT, DEFAULT_UNLOCK_TAP_COUNT)
+            .coerceIn(MIN_UNLOCK_TAP_COUNT, MAX_UNLOCK_TAP_COUNT)
+
     private fun launchUnlock() {
         val intent = Intent(this, UnlockActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -108,25 +120,12 @@ class BlackOverlayService : Service() {
     }
 
     private fun createNotification(): Notification {
-        val stopIntent = Intent(this, BlackOverlayService::class.java).apply { action = ACTION_STOP }
-        val stopPendingIntent = PendingIntent.getService(
-            this,
-            10,
-            stopIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.notification_title))
             .setContentText(getString(R.string.notification_text))
             .setSmallIcon(R.drawable.ic_stat_overlay)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .addAction(
-                android.R.drawable.ic_delete,
-                getString(R.string.stop_overlay),
-                stopPendingIntent
-            )
             .build()
     }
 
@@ -156,11 +155,15 @@ class BlackOverlayService : Service() {
     }
 
     companion object {
-        const val ACTION_STOP = "com.andres.blackoverlay.action.STOP"
         const val PREFS_NAME = "black_overlay_state"
         const val KEY_OVERLAY_ACTIVE = "overlay_active"
+        const val KEY_UNLOCK_TAP_COUNT = "unlock_tap_count"
+        const val MIN_UNLOCK_TAP_COUNT = 3
+        const val MAX_UNLOCK_TAP_COUNT = 7
+        const val DEFAULT_UNLOCK_TAP_COUNT = 3
 
         private const val CHANNEL_ID = "black_overlay_channel"
         private const val NOTIFICATION_ID = 1001
+        private val UNLOCK_TAP_TIMEOUT_MS = ViewConfiguration.getDoubleTapTimeout().toLong() * 2
     }
 }

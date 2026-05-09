@@ -3,6 +3,7 @@ package com.andres.blackoverlay
 import android.Manifest
 import android.app.StatusBarManager
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Icon
 import android.net.Uri
@@ -10,6 +11,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Button
+import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,6 +23,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var permissionStatus: TextView
     private lateinit var requestOverlayButton: Button
     private lateinit var startOverlayButton: Button
+    private lateinit var unlockTapCountGroup: RadioGroup
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -35,6 +38,7 @@ class MainActivity : AppCompatActivity() {
         permissionStatus = findViewById(R.id.textPermissionStatus)
         requestOverlayButton = findViewById(R.id.buttonRequestOverlay)
         startOverlayButton = findViewById(R.id.buttonStartOverlay)
+        unlockTapCountGroup = findViewById(R.id.groupUnlockTapCount)
 
         requestOverlayButton.setOnClickListener { requestOverlayPermission() }
         findViewById<Button>(R.id.buttonAddQuickSettingsTile).setOnClickListener {
@@ -42,6 +46,8 @@ class MainActivity : AppCompatActivity() {
         }
         startOverlayButton.setOnClickListener { startOverlay() }
         findViewById<Button>(R.id.buttonStopOverlay).setOnClickListener { stopOverlay() }
+
+        configureUnlockTapCountGroup()
     }
 
     override fun onResume() {
@@ -67,6 +73,38 @@ class MainActivity : AppCompatActivity() {
         requestOverlayButton.isEnabled = !overlayGranted
         startOverlayButton.isEnabled = overlayGranted
     }
+
+    private fun configureUnlockTapCountGroup() {
+        val prefs = getSharedPreferences(BlackOverlayService.PREFS_NAME, Context.MODE_PRIVATE)
+        val savedTapCount = prefs.getInt(
+            BlackOverlayService.KEY_UNLOCK_TAP_COUNT,
+            BlackOverlayService.DEFAULT_UNLOCK_TAP_COUNT
+        ).coerceIn(
+            BlackOverlayService.MIN_UNLOCK_TAP_COUNT,
+            BlackOverlayService.MAX_UNLOCK_TAP_COUNT
+        )
+
+        unlockTapCountGroup.check(idForUnlockTapCount(savedTapCount))
+        unlockTapCountGroup.setOnCheckedChangeListener { _, checkedId ->
+            prefs.edit()
+                .putInt(BlackOverlayService.KEY_UNLOCK_TAP_COUNT, tapCountForId(checkedId))
+                .apply()
+        }
+    }
+
+    private fun idForUnlockTapCount(tapCount: Int): Int =
+        when (tapCount) {
+            4 -> R.id.radioUnlockTapCount4
+            5 -> R.id.radioUnlockTapCount5
+            else -> R.id.radioUnlockTapCount3
+        }
+
+    private fun tapCountForId(id: Int): Int =
+        when (id) {
+            R.id.radioUnlockTapCount4 -> 4
+            R.id.radioUnlockTapCount5 -> 5
+            else -> 3
+        }
 
     private fun requestOverlayPermission() {
         if (Settings.canDrawOverlays(this)) {

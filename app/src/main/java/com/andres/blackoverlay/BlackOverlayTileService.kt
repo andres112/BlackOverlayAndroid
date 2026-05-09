@@ -25,13 +25,14 @@ class BlackOverlayTileService : TileService() {
         }
 
         if (isOverlayActive()) {
-            stopService(Intent(this, BlackOverlayService::class.java))
-        } else {
-            try {
-                ContextCompat.startForegroundService(this, Intent(this, BlackOverlayService::class.java))
-            } catch (_: RuntimeException) {
-                openMainActivity()
-            }
+            updateTile()
+            return
+        }
+
+        try {
+            ContextCompat.startForegroundService(this, Intent(this, BlackOverlayService::class.java))
+        } catch (_: RuntimeException) {
+            openMainActivity()
         }
         updateTile()
     }
