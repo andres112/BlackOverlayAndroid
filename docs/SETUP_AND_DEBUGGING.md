@@ -17,7 +17,6 @@ It does not use:
 
 If something goes wrong during testing, use one of these recovery paths:
 
-- Pull down notifications if Android allows it and tap the notification **Stop** action.
 - Open the app again and tap **Stop overlay**.
 - Force stop or uninstall the app from Android Settings.
 - Reboot the phone.
@@ -174,11 +173,12 @@ If you denied it earlier:
 1. Open the app.
 2. Grant overlay permission.
 3. Allow notifications if Android asks.
-4. Tap **Start black overlay**.
-5. Confirm the screen becomes black.
-6. Long press the black screen.
-7. Authenticate with biometric, PIN, pattern, or password.
-8. Confirm the overlay disappears.
+4. Choose the unlock tap count from the **Unlock taps** dropdown.
+5. Tap **Start black overlay**.
+6. Confirm the screen becomes black.
+7. Tap the black screen the configured number of times.
+8. Authenticate with biometric, PIN, pattern, or password.
+9. Confirm the overlay disappears.
 
 ## Add The Quick Settings Tile
 
@@ -189,7 +189,7 @@ Android 13+:
 1. Open **Black Overlay**.
 2. Tap **Add Quick Settings tile**.
 3. Accept Android's prompt to add the tile.
-4. Swipe down from the top of the screen and tap **Black Overlay** to start or stop the overlay.
+4. Swipe down from the top of the screen and tap **Black Overlay** to start the overlay.
 
 Manual method:
 
@@ -197,14 +197,16 @@ Manual method:
 2. Tap the edit button for Quick Settings tiles.
 3. Find **Black Overlay**.
 4. Drag it into the active Quick Settings area.
-5. Tap the tile to start or stop the overlay.
+5. Tap the tile to start the overlay.
 
 If overlay permission has not been granted yet, tapping the tile opens the app so you can grant permission first.
+
+When the overlay is already active, tapping the Quick Settings tile does not stop or unlock it. Use the configured tap sequence followed by biometric/device-credential authentication.
 
 Emergency/manual test:
 
 1. Start the overlay.
-2. Use the foreground notification **Stop** action, or reopen the app and tap **Stop overlay**.
+2. Reopen the app and tap **Stop overlay**.
 3. Confirm the black overlay is removed.
 
 ## Common Issues
@@ -250,6 +252,12 @@ Unlock prompt closes without removing the overlay:
 
 - Make sure the phone has a PIN, pattern, password, or biometric enrolled.
 - Cancel/error paths intentionally leave the overlay active.
+
+Configured taps do not open the unlock prompt:
+
+- Confirm you are tapping the black overlay itself.
+- Tap within a short sequence; long pauses reset the count.
+- Confirm the selected **Unlock taps** value in the app.
 
 ## Repository Hygiene
 

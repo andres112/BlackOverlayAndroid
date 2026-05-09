@@ -2,14 +2,32 @@
 
 ## Architecture
 
-The app has three runtime pieces:
+The app is intentionally small, but it separates runtime Android components from settings storage and main-screen state.
 
-- `MainActivity`: permission/status UI and manual start/stop controls.
+Runtime components:
+
+- `MainActivity`: native Views screen for permissions, tap-count configuration, and manual start/stop controls.
 - `BlackOverlayService`: foreground service that owns the overlay window and notification.
-- `UnlockActivity`: authentication screen launched by long pressing the overlay.
-- `BlackOverlayTileService`: optional Quick Settings tile for fast start/stop access.
+- `UnlockActivity`: authentication screen launched after the configured tap sequence.
+- `BlackOverlayTileService`: optional Quick Settings tile for activation-only access.
+
+Settings and state components:
+
+- `OverlaySettings`: central constants for preference names, keys, defaults, and supported tap-count range.
+- `OverlaySettingsRepository`: repository wrapper around `SharedPreferences`.
+- `MainViewModel`: main-screen ViewModel that exposes settings to `MainActivity`.
 
 The overlay lifetime is tied to `BlackOverlayService`. Starting the service creates the foreground notification and adds the overlay view. Stopping the service removes the view in `onDestroy()`.
+
+## Patterns
+
+The project uses a deliberately lightweight MVVM + Repository design.
+
+MVVM is used only where it provides value today: `MainActivity` is the View, and `MainViewModel` is the ViewModel for main-screen settings state. `MainActivity` still owns Android framework orchestration such as permission requests, `Intent` launches, and button click wiring because those are view/controller concerns in this small native Views app. The ViewModel exposes the unlock tap-count options and persists user changes through the repository.
+
+The Repository pattern is used for settings persistence. `OverlaySettingsRepository` is the only class that reads and writes the app's `SharedPreferences`; services, tile code, and activities consume intent-level methods such as `getUnlockTapCount()` or `setOverlayActive()`. This keeps preference keys and coercion rules out of runtime components and prevents future settings from spreading across the codebase.
+
+`OverlaySettings` is the central configuration point for settings constants. To change the supported unlock tap-count range, update `MIN_UNLOCK_TAP_COUNT`, `MAX_UNLOCK_TAP_COUNT`, and optionally `DEFAULT_UNLOCK_TAP_COUNT` there. The dropdown options are generated from those constants, and the service reads the same persisted value through the repository.
 
 ## Runtime Flow
 
@@ -21,18 +39,20 @@ The overlay lifetime is tied to `BlackOverlayService`. Starting the service crea
 6. `MainActivity` starts `BlackOverlayService` with `ContextCompat.startForegroundService()`.
 7. `BlackOverlayService` calls `startForeground()` and creates the black overlay.
 8. The overlay consumes touch events.
-9. A long press launches `UnlockActivity`.
-10. `UnlockActivity` shows AndroidX `BiometricPrompt`.
-11. Successful authentication stops `BlackOverlayService`.
-12. `BlackOverlayService.onDestroy()` removes the overlay.
+9. Followed taps anywhere on the overlay are counted by `BlackOverlayService`.
+10. When the configured tap count is reached, `BlackOverlayService` launches `UnlockActivity`.
+11. `UnlockActivity` shows AndroidX `BiometricPrompt`.
+12. Successful authentication stops `BlackOverlayService`.
+13. `BlackOverlayService.onDestroy()` removes the overlay.
 
 Cancel, error, and failed authentication paths do not stop the service, so the overlay remains active.
 
 Quick Settings flow:
 
 1. User taps **Add Quick Settings tile** in `MainActivity`, or manually adds the tile from Android Quick Settings edit mode.
-2. If overlay permission is granted, tapping the tile starts or stops `BlackOverlayService`.
-3. If overlay permission is missing, tapping the tile opens `MainActivity`.
+2. If overlay permission is granted and the overlay is inactive, tapping the tile starts `BlackOverlayService`.
+3. If the overlay is already active, tapping the tile leaves it active.
+4. If overlay permission is missing, tapping the tile opens `MainActivity`.
 
 ## Project Structure
 
@@ -52,11 +72,16 @@ Quick Settings flow:
         +-- AndroidManifest.xml
         +-- java/com/andres/blackoverlay/
         |   +-- MainActivity.kt
+        |   +-- MainViewModel.kt
         |   +-- BlackOverlayService.kt
         |   +-- BlackOverlayTileService.kt
+        |   +-- OverlaySettings.kt
+        |   +-- OverlaySettingsRepository.kt
         |   +-- UnlockActivity.kt
         +-- res/
             +-- layout/activity_main.xml
+            +-- layout/item_spinner_unlock_tap_count.xml
+            +-- layout/item_spinner_unlock_tap_count_dropdown.xml
             +-- drawable/
             +-- mipmap-anydpi-v26/
             +-- values/colors.xml
@@ -86,7 +111,7 @@ Quick Settings flow:
 - Android application module configuration.
 - Sets namespace and application id to `com.andres.blackoverlay`.
 - Uses `minSdk 28`, `compileSdk 36`, and `targetSdk 36`.
-- Adds AndroidX Core, AppCompat, and stable AndroidX Biometric dependencies.
+- Adds AndroidX Core, AppCompat, AndroidX Biometric, and AndroidX Lifecycle ViewModel dependencies.
 - Uses Java/Kotlin 17 bytecode settings.
 
 `app/src/main/AndroidManifest.xml`
@@ -102,11 +127,34 @@ Quick Settings flow:
 `MainActivity.kt`
 
 - Displays overlay and notification permission status.
+- Hosts the main native Views screen.
+- Uses `MainViewModel` for unlock tap-count settings.
+- Populates a dropdown from the ViewModel's tap-count options.
 - Opens Android overlay permission settings.
 - Requests that Android add the app's Quick Settings tile on Android 13+.
 - Requests notification permission on Android 13+.
 - Starts and stops `BlackOverlayService`.
 - Disables the start button until overlay permission is granted.
+
+`MainViewModel.kt`
+
+- Implements the ViewModel side of the main screen's MVVM split.
+- Exposes unlock tap-count options generated from `OverlaySettings`.
+- Reads and writes settings through `OverlaySettingsRepository`.
+- Keeps settings persistence out of `MainActivity`.
+
+`OverlaySettings.kt`
+
+- Centralizes local settings names, keys, defaults, and allowed ranges.
+- Defines unlock tap-count range constants: 3 minimum, 7 maximum, 3 default.
+- Generates the dropdown option list from the configured range.
+
+`OverlaySettingsRepository.kt`
+
+- Owns `SharedPreferences` access.
+- Persists overlay active state for Quick Settings tile status.
+- Persists unlock tap-count configuration.
+- Coerces stored tap-count values back into the supported range.
 
 `BlackOverlayService.kt`
 
@@ -116,17 +164,19 @@ Quick Settings flow:
 - Uses `TYPE_APPLICATION_OVERLAY`.
 - Consumes all touches with an `OnTouchListener`.
 - Uses `FLAG_NOT_FOCUSABLE` so the app overlay does not take key/input focus from the system.
-- Detects a long press with `GestureDetector`.
+- Counts followed taps anywhere on the overlay.
+- Reads the required tap count from `OverlaySettingsRepository`.
 - Launches `UnlockActivity`.
 - Removes the overlay safely when the service stops.
-- Stores simple local overlay-active state for Quick Settings tile display.
+- Stores overlay-active state through `OverlaySettingsRepository`.
 
 `BlackOverlayTileService.kt`
 
 - Provides a Quick Settings tile named **Black Overlay**.
 - Starts the foreground service when the tile is inactive.
-- Stops the foreground service when the tile is active.
+- Leaves the foreground service running when the tile is active.
 - Opens `MainActivity` if overlay permission has not been granted.
+- Reads overlay-active state through `OverlaySettingsRepository`.
 
 `UnlockActivity.kt`
 
@@ -138,7 +188,15 @@ Quick Settings flow:
 `app/src/main/res/layout/activity_main.xml`
 
 - Native Android Views layout for the minimal UI.
-- Contains permission status text and three buttons.
+- Contains permission status text, unlock tap-count dropdown, and action buttons.
+
+`app/src/main/res/layout/item_spinner_unlock_tap_count.xml`
+
+- Selected-row layout for the unlock tap-count dropdown.
+
+`app/src/main/res/layout/item_spinner_unlock_tap_count_dropdown.xml`
+
+- Popup-row layout for the unlock tap-count dropdown.
 
 `app/src/main/res/values/strings.xml`
 
@@ -187,8 +245,11 @@ Quick Settings flow:
 - Activities and the foreground service are not exported except `MainActivity`, which is the launcher entry point.
 - App backup is disabled in the manifest.
 - Cleartext network traffic is disabled, and the app does not request internet access.
-- Notification actions use immutable `PendingIntent` flags.
+- Activity-launch `PendingIntent` usage is immutable where required by Android APIs.
 - The foreground service re-checks overlay permission before adding the window.
+- The Quick Settings tile is activation-only and does not stop or unlock an active overlay.
+- The foreground notification has no stop action, preventing notification-shade unlock bypass.
+- Only successful biometric/device-credential authentication removes the overlay during normal locked operation.
 - The overlay uses app-level `TYPE_APPLICATION_OVERLAY`; it does not request Device Owner, AccessibilityService, root, Lock Task Mode, or system-app privileges.
 - Signing keys, local SDK paths, build outputs, IDE metadata, and generated reports are ignored by `.gitignore`.
 
@@ -205,6 +266,8 @@ The service creates a plain `View` with an opaque black background. It uses:
 
 The overlay consumes every touch event by returning `true` from its touch listener. This prevents touches from passing through to normal apps underneath the overlay.
 
+`BlackOverlayService` counts `ACTION_UP` events. If the pause between taps exceeds the configured timeout, the sequence resets. When the count reaches the configured value from `OverlaySettingsRepository`, the service launches `UnlockActivity`.
+
 The app intentionally does not try to block system navigation. Android reserves Home, Back, Recents, power, and some system surfaces for the operating system, so Samsung/Android may still keep parts of the bottom navigation area interactive.
 
 ## Foreground Service Behavior
@@ -215,9 +278,11 @@ The app intentionally does not try to block system navigation. Android reserves 
 - low importance
 - only alerts once
 - visible while the overlay is active
-- equipped with a **Stop** action for emergency development testing
+- not equipped with a stop action
 
 Repeated service starts are handled by checking whether `overlayView` is already non-null before adding a view. This avoids duplicate overlay windows.
+
+The Quick Settings tile mirrors overlay-active state for display, but it does not stop an active overlay. This prevents unlocking or removing the overlay from the notification shade or pull-down controls.
 
 ## Authentication Behavior
 
@@ -230,6 +295,8 @@ BIOMETRIC_WEAK or DEVICE_CREDENTIAL
 This supports devices with weak biometrics, PIN, pattern, or password. If authentication is unavailable, the activity closes and leaves the overlay active.
 
 Only `onAuthenticationSucceeded()` stops the service. `onAuthenticationError()` finishes the activity but keeps the overlay active. `onAuthenticationFailed()` leaves the prompt open where Android supports it.
+
+The unlock prompt is reachable only after the configured tap sequence. The default is 3 taps, and the supported range is 3 through 7 taps. The range is defined in `OverlaySettings`, persisted through `OverlaySettingsRepository`, exposed to the UI through `MainViewModel`, and consumed by `BlackOverlayService`.
 
 ## Brightness
 
@@ -277,5 +344,10 @@ Manual inspection checklist:
 - Overlay permission is checked before service start and inside service start.
 - Notification permission is requested only on Android 13+.
 - Unlock uses AndroidX `BiometricPrompt`.
+- Unlock tap-count range is centralized in `OverlaySettings`.
+- Settings persistence goes through `OverlaySettingsRepository`.
+- Main-screen settings state goes through `MainViewModel`.
+- Quick Settings tile starts only and does not stop an active overlay.
+- Foreground notification has no stop action.
 - Service removes the overlay in `onDestroy()`.
 - No Device Owner, Lock Task Mode, AccessibilityService, root, telemetry, ads, cloud service, or Play Store-specific behavior is present.

@@ -15,6 +15,7 @@ The app intentionally implements a visual black overlay, not a real lock screen.
 - compileSdk 36
 - targetSdk 36
 - AndroidX Biometric
+- AndroidX Lifecycle ViewModel
 - Foreground service
 - `WindowManager` with `TYPE_APPLICATION_OVERLAY`
 
@@ -26,6 +27,7 @@ The app intentionally implements a visual black overlay, not a real lock screen.
 - Kotlin sources: `app/src/main/java/com/andres/blackoverlay/`
 - Native Views layouts: `app/src/main/res/layout/`
 - Values resources: `app/src/main/res/values/`
+- Technical docs: `docs/`
 
 ## Implementation Notes
 
@@ -35,7 +37,11 @@ The app intentionally implements a visual black overlay, not a real lock screen.
 - Keep notification permission handling graceful on Android 13+.
 - The foreground service should remain robust against repeated starts and duplicate overlay views.
 - Overlay views must consume touches and use `TYPE_APPLICATION_OVERLAY`.
+- Overlay unlock should be triggered by followed taps anywhere on the overlay. The supported tap-count range must stay centralized in `OverlaySettings`.
 - Unlock should require AndroidX `BiometricPrompt` with `BIOMETRIC_WEAK | DEVICE_CREDENTIAL`.
+- Quick Settings tile behavior is activation-only. Do not allow the tile or foreground notification to stop/unlock an active overlay.
+- Keep settings persistence behind `OverlaySettingsRepository`; do not spread `SharedPreferences` keys through activities, services, or tiles.
+- Keep main-screen settings UI behind `MainViewModel` so `MainActivity` remains mostly view binding, permission handling, and Android intent orchestration.
 - Do not request `WRITE_SETTINGS` unless explicitly implementing future brightness control.
 - For target SDK 36 foreground service compatibility, preserve the special-use foreground service declaration unless replacing it with a better documented Android 16-compatible type.
 
