@@ -15,4 +15,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setUnlockTapCount(tapCount: Int) {
         settingsRepository.setUnlockTapCount(tapCount)
     }
+
+    fun isQuickSettingsTileAdded(): Boolean =
+        settingsRepository.isQuickSettingsTileAdded()
+
+    fun setQuickSettingsTileAdded(added: Boolean) {
+        settingsRepository.setQuickSettingsTileAdded(added)
+    }
 }

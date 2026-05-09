@@ -39,4 +39,13 @@ class OverlaySettingsRepository(context: Context) {
             )
             .apply()
     }
+
+    fun isQuickSettingsTileAdded(): Boolean =
+        prefs.getBoolean(OverlaySettings.KEY_QUICK_SETTINGS_TILE_ADDED, false)
+
+    fun setQuickSettingsTileAdded(added: Boolean) {
+        prefs.edit()
+            .putBoolean(OverlaySettings.KEY_QUICK_SETTINGS_TILE_ADDED, added)
+            .apply()
+    }
 }

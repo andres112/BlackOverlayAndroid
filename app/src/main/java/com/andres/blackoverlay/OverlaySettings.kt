@@ -5,6 +5,7 @@ object OverlaySettings {
 
     const val KEY_OVERLAY_ACTIVE = "overlay_active"
     const val KEY_UNLOCK_TAP_COUNT = "unlock_tap_count"
+    const val KEY_QUICK_SETTINGS_TILE_ADDED = "quick_settings_tile_added"
 
     const val MIN_UNLOCK_TAP_COUNT = 3
     const val MAX_UNLOCK_TAP_COUNT = 7

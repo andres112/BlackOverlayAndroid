@@ -13,26 +13,29 @@ import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.Spinner
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var viewModel: MainViewModel
-    private lateinit var permissionStatus: TextView
-    private lateinit var requestOverlayButton: Button
     private lateinit var startOverlayButton: Button
+    private lateinit var overlayPermissionSwitch: SwitchCompat
+    private lateinit var notificationPermissionSwitch: SwitchCompat
+    private lateinit var quickSettingsTileRow: View
+    private lateinit var quickSettingsTileCheck: CheckBox
     private lateinit var unlockTapCountSpinner: Spinner
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {
-        updatePermissionStatus()
+        updateSettingsStatus()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,15 +43,17 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
-        permissionStatus = findViewById(R.id.textPermissionStatus)
-        requestOverlayButton = findViewById(R.id.buttonRequestOverlay)
         startOverlayButton = findViewById(R.id.buttonStartOverlay)
+        overlayPermissionSwitch = findViewById(R.id.switchOverlayPermission)
+        notificationPermissionSwitch = findViewById(R.id.switchNotificationPermission)
+        quickSettingsTileRow = findViewById(R.id.rowQuickSettingsTile)
+        quickSettingsTileCheck = findViewById(R.id.checkQuickSettingsTile)
         unlockTapCountSpinner = findViewById(R.id.spinnerUnlockTapCount)
 
-        requestOverlayButton.setOnClickListener { requestOverlayPermission() }
-        findViewById<Button>(R.id.buttonAddQuickSettingsTile).setOnClickListener {
-            requestAddQuickSettingsTile()
-        }
+        overlayPermissionSwitch.setOnClickListener { requestOverlayPermission() }
+        notificationPermissionSwitch.setOnClickListener { maybeRequestNotificationPermission() }
+        quickSettingsTileCheck.setOnClickListener { requestAddQuickSettingsTile() }
+        quickSettingsTileRow.setOnClickListener { requestAddQuickSettingsTile() }
         startOverlayButton.setOnClickListener { startOverlay() }
         findViewById<Button>(R.id.buttonStopOverlay).setOnClickListener { stopOverlay() }
 
@@ -58,24 +63,22 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         // Overlay permission is granted in Settings, so refresh whenever the user returns.
-        updatePermissionStatus()
+        updateSettingsStatus()
     }
 
-    private fun updatePermissionStatus() {
+    private fun updateSettingsStatus() {
         val overlayGranted = Settings.canDrawOverlays(this)
-        val notificationGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
-                android.content.pm.PackageManager.PERMISSION_GRANTED
-        } else {
-            true
-        }
+        val notificationGranted = isNotificationPermissionGranted()
+        val tileAdded = viewModel.isQuickSettingsTileAdded()
 
-        permissionStatus.text = getString(
-            R.string.permission_status_template,
-            if (overlayGranted) getString(R.string.granted) else getString(R.string.missing),
-            if (notificationGranted) getString(R.string.granted) else getString(R.string.missing)
-        )
-        requestOverlayButton.isEnabled = !overlayGranted
+        overlayPermissionSwitch.isChecked = overlayGranted
+        overlayPermissionSwitch.isEnabled = !overlayGranted
+        notificationPermissionSwitch.isChecked = notificationGranted
+        notificationPermissionSwitch.isEnabled = !notificationGranted &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        quickSettingsTileCheck.isChecked = tileAdded
+        quickSettingsTileCheck.isEnabled = !tileAdded
+        quickSettingsTileRow.isEnabled = !tileAdded
         startOverlayButton.isEnabled = overlayGranted
     }
 
@@ -107,9 +110,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun requestOverlayPermission() {
         if (Settings.canDrawOverlays(this)) {
-            updatePermissionStatus()
+            updateSettingsStatus()
             return
         }
+        overlayPermissionSwitch.isChecked = false
 
         // SYSTEM_ALERT_WINDOW is not a runtime permission; Android exposes it through settings.
         val intent = Intent(
@@ -122,15 +126,18 @@ class MainActivity : AppCompatActivity() {
     private fun maybeRequestNotificationPermission() {
         // Android 13+ requires a runtime notification permission before notifications are visible.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val granted = ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            val granted = isNotificationPermissionGranted()
             if (!granted) {
+                notificationPermissionSwitch.isChecked = false
                 notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
     }
+
+    private fun isNotificationPermissionGranted(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED
 
     private fun requestAddQuickSettingsTile() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -140,10 +147,17 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.quick_settings_tile_label),
                 Icon.createWithResource(this, R.drawable.ic_stat_overlay),
                 mainExecutor
-            ) {
-                // Android owns the result UI; no app state needs to change here.
+            ) { result ->
+                if (
+                    result == StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED ||
+                    result == StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED
+                ) {
+                    viewModel.setQuickSettingsTileAdded(true)
+                }
+                updateSettingsStatus()
             }
         } else {
+            quickSettingsTileCheck.isChecked = false
             Toast.makeText(
                 this,
                 R.string.quick_settings_tile_manual_add,

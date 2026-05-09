@@ -49,7 +49,7 @@ Cancel, error, and failed authentication paths do not stop the service, so the o
 
 Quick Settings flow:
 
-1. User taps **Add Quick Settings tile** in `MainActivity`, or manually adds the tile from Android Quick Settings edit mode.
+1. User taps the unchecked **Quick Settings tile** checkbox in `MainActivity`, or manually adds the tile from Android Quick Settings edit mode.
 2. If overlay permission is granted and the overlay is inactive, tapping the tile starts `BlackOverlayService`.
 3. If the overlay is already active, tapping the tile leaves it active.
 4. If overlay permission is missing, tapping the tile opens `MainActivity`.
@@ -126,12 +126,13 @@ Quick Settings flow:
 
 `MainActivity.kt`
 
-- Displays overlay and notification permission status.
+- Displays overlay and notification permission state with switches.
+- Displays known Quick Settings tile state with a checkbox.
 - Hosts the main native Views screen.
 - Uses `MainViewModel` for unlock tap-count settings.
 - Populates a dropdown from the ViewModel's tap-count options.
 - Opens Android overlay permission settings.
-- Requests that Android add the app's Quick Settings tile on Android 13+.
+- Requests that Android add the app's Quick Settings tile on Android 13+ from the checkbox row.
 - Requests notification permission on Android 13+.
 - Starts and stops `BlackOverlayService`.
 - Disables the start button until overlay permission is granted.
@@ -154,6 +155,7 @@ Quick Settings flow:
 - Owns `SharedPreferences` access.
 - Persists overlay active state for Quick Settings tile status.
 - Persists unlock tap-count configuration.
+- Persists whether Android has reported the Quick Settings tile as added or already present.
 - Coerces stored tap-count values back into the supported range.
 
 `BlackOverlayService.kt`
@@ -188,7 +190,7 @@ Quick Settings flow:
 `app/src/main/res/layout/activity_main.xml`
 
 - Native Android Views layout for the minimal UI.
-- Contains permission status text, unlock tap-count dropdown, and action buttons.
+- Contains overlay controls, setup switches, Quick Settings tile checkbox, unlock tap-count dropdown, and action buttons.
 
 `app/src/main/res/layout/item_spinner_unlock_tap_count.xml`
 

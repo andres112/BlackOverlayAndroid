@@ -138,11 +138,11 @@ Use `-r` to replace the existing debug install while keeping normal app data.
 Android requires explicit user approval before an app can draw over other apps.
 
 1. Open **Black Overlay**.
-2. Tap **Request overlay permission**.
+2. Tap the **Overlay permission** switch.
 3. Samsung settings opens the app-specific overlay page.
 4. Allow **Appear on top** for this app.
 5. Return to the app.
-6. Confirm the app shows overlay permission as granted.
+6. Confirm the **Overlay permission** switch is checked.
 
 If you need to find it manually:
 
@@ -187,7 +187,7 @@ The app includes an optional Quick Settings tile for faster access from the pull
 Android 13+:
 
 1. Open **Black Overlay**.
-2. Tap **Add Quick Settings tile**.
+2. Tap the unchecked **Quick Settings tile** checkbox in **Settings**.
 3. Accept Android's prompt to add the tile.
 4. Swipe down from the top of the screen and tap **Black Overlay** to start the overlay.
 
